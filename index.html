@@ -514,6 +514,42 @@ canvas.chart{display:block;width:100%!important;cursor:default}
   .stat-num{font-size:20px}
   .report-grid{grid-template-columns:1fr 1fr}
 }
+
+/* === V7 EXTENSIONS: pagination, tabs, faltas/abonos === */
+.pagination{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;padding:12px}
+.pag-btn{min-width:34px;height:34px;padding:0 11px;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.pag-btn:hover:not(:disabled){background:var(--bg2);border-color:var(--primary)}
+.pag-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pag-btn:disabled{opacity:.4;cursor:not-allowed}
+.az-bar{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:8px 0;margin-top:6px}
+.az-btn{min-width:28px;height:28px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:.12s;padding:0 4px}
+.az-btn:hover{background:var(--bg2);color:var(--text)}
+.az-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.tab-bar{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+.tab-btn{padding:9px 14px;background:transparent;border:none;color:var(--muted);font-size:12.5px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;width:auto}
+.tab-btn:hover{color:var(--text);opacity:1;transform:none}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+.az-btn,.pag-btn{width:auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.fa-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.fa-row:last-child{border-bottom:none}
+.fa-date{font-size:11.5px;color:var(--muted);min-width:90px;font-weight:600}
+.fa-qty{background:var(--bg2);border-radius:6px;padding:3px 9px;font-weight:700;font-size:12px;color:var(--text);min-width:32px;text-align:center}
+.fa-info{flex:1;min-width:0}
+.fa-motivo{font-weight:600;font-size:13px;color:var(--text)}
+.fa-obs{font-size:11.5px;color:var(--muted);margin-top:2px}
+.pag-info{font-size:11.5px;color:var(--muted);text-align:center;padding:6px}
+.fa-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:10px}
+.fa-pill{padding:10px;border-radius:9px;border:1px solid var(--border);background:var(--bg);text-align:center}
+.fa-pill-num{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.fa-pill-lbl{font-size:10.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+.user-extra-meta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.user-extra-meta span strong{color:var(--text)}
+@media(max-width:600px){
+  .az-btn{min-width:24px;height:24px;font-size:10px}
+  .pag-btn{min-width:30px;height:30px;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -540,6 +576,9 @@ canvas.chart{display:block;width:100%!important;cursor:default}
     </button>
     <button class="menu-btn" onclick="UI.go('consultaPage',this)">
       <span class="menu-icon">🔍</span>Consulta
+    </button>
+    <button class="menu-btn" onclick="UI.go('absencesPage',this)">
+      <span class="menu-icon">📋</span>Faltas & Abonos
     </button>
 
     <div class="menu-section">Análise</div>
@@ -637,35 +676,93 @@ canvas.chart{display:block;width:100%!important;cursor:default}
 <section class="page" id="cadastroPage">
   <div class="card">
     <div class="card-title">➕ Novo Usuário</div>
-    <div class="form-grid">
-      <div class="form-group span-2">
-        <label>Nome Completo *</label>
-        <input type="text" id="cNome" maxlength="150"
-          placeholder="Digite o nome completo..."
-          onkeydown="if(event.key==='Enter')Cadastro.submit()" />
-      </div>
-      <div class="form-group">
-        <label>eCidade</label>
-        <select id="cEcidade">
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>CGM</label>
-        <select id="cCgm">
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
-      </div>
-      <div class="form-group span-2">
-        <label>NetTerm</label>
-        <select id="cNetterm">
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
+
+    <div class="tab-bar" id="cadTabs">
+      <button class="tab-btn active" data-tab="cadPanelBasico" onclick="Cadastro.tab(event)">📝 Dados básicos</button>
+      <button class="tab-btn" data-tab="cadPanelContato" onclick="Cadastro.tab(event)">📞 Contato</button>
+      <button class="tab-btn" data-tab="cadPanelProf"    onclick="Cadastro.tab(event)">💼 Profissional</button>
+      <button class="tab-btn" data-tab="cadPanelSis"     onclick="Cadastro.tab(event)">🖥️ Sistemas</button>
+    </div>
+
+    <div class="tab-panel active" id="cadPanelBasico">
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label>Nome Completo *</label>
+          <input type="text" id="cNome" maxlength="150"
+            placeholder="Digite o nome completo..."
+            onkeydown="if(event.key==='Enter')Cadastro.submit()" />
+        </div>
+        <div class="form-group">
+          <label>CPF</label>
+          <input type="text" id="cCpf" maxlength="14" placeholder="000.000.000-00" />
+        </div>
+        <div class="form-group">
+          <label>Data de admissão</label>
+          <input type="date" id="cAdmissao" />
+        </div>
+        <div class="form-group span-2">
+          <label>Observações</label>
+          <textarea id="cObs" maxlength="500" rows="2" placeholder="Notas internas..." style="resize:vertical;font:inherit;width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)"></textarea>
+        </div>
       </div>
     </div>
+
+    <div class="tab-panel" id="cadPanelContato">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Telefone</label>
+          <input type="text" id="cTelefone" maxlength="20" placeholder="(00) 00000-0000" />
+        </div>
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" id="cEmail" maxlength="120" placeholder="usuario@hospital.com" />
+        </div>
+        <div class="form-group span-2">
+          <label>Endereço</label>
+          <input type="text" id="cEndereco" maxlength="200" placeholder="Rua, número, bairro, cidade..." />
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="cadPanelProf">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="cCargo" maxlength="80" placeholder="Ex: Enfermeiro(a), Técnico..." />
+        </div>
+        <div class="form-group">
+          <label>Setor principal</label>
+          <select id="cSetorPrincipal"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="cadPanelSis">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>eCidade</label>
+          <select id="cEcidade">
+            <option value="Não">Não</option>
+            <option value="Sim">Sim</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>CGM</label>
+          <select id="cCgm">
+            <option value="Não">Não</option>
+            <option value="Sim">Sim</option>
+          </select>
+        </div>
+        <div class="form-group span-2">
+          <label>NetTerm</label>
+          <select id="cNetterm">
+            <option value="Não">Não</option>
+            <option value="Sim">Sim</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
     <hr class="divider">
     <div class="actions">
       <button class="btn-primary" onclick="Cadastro.submit()">✅ Cadastrar Usuário</button>
@@ -691,7 +788,20 @@ canvas.chart{display:block;width:100%!important;cursor:default}
         <option value="cgm">CGM</option>
         <option value="netterm">NetTerm</option>
       </select>
+      <select id="filterSort" onchange="FilterManager.apply()" title="Ordenação">
+        <option value="az">A → Z</option>
+        <option value="za">Z → A</option>
+        <option value="recent">Mais recentes</option>
+        <option value="plantoes">Mais plantões</option>
+      </select>
+      <select id="filterPageSize" onchange="FilterManager.apply()" title="Itens por página">
+        <option value="10">10 / pág</option>
+        <option value="20" selected>20 / pág</option>
+        <option value="50">50 / pág</option>
+        <option value="100">100 / pág</option>
+      </select>
     </div>
+    <div class="az-bar" id="azBar"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <span id="consultaCount" style="font-size:11.5px;color:var(--muted)"></span>
       <div class="actions">
@@ -701,6 +811,7 @@ canvas.chart{display:block;width:100%!important;cursor:default}
     </div>
   </div>
   <div id="consultaList"></div>
+  <div id="consultaPagination" class="pagination"></div>
 </section>
 
 <!-- ======== RELATÓRIOS ======== -->
@@ -809,6 +920,25 @@ canvas.chart{display:block;width:100%!important;cursor:default}
     </div>
     <div id="logsContainer"></div>
   </div>
+</section>
+
+<!-- ======== FALTAS & ABONOS ======== -->
+<section class="page" id="absencesPage">
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-header">
+      <div class="card-title" style="margin-bottom:0">📋 Faltas & Abonos</div>
+      <div class="actions">
+        <input type="text" id="faSearch" placeholder="🔍 Buscar usuário..." oninput="AbsencesPage.search()" style="width:200px">
+        <select id="faTab" onchange="AbsencesPage.setTab(this.value)">
+          <option value="all">📊 Resumo geral</option>
+          <option value="faltas">❌ Só faltas</option>
+          <option value="abonos">✅ Só abonos</option>
+        </select>
+      </div>
+    </div>
+    <div class="fa-summary" id="faGlobalSummary"></div>
+  </div>
+  <div id="faContent"></div>
 </section>
 
 </div><!-- /content -->
@@ -2512,6 +2642,612 @@ function lazyRender(list,callback,chunk=10){
 }
 
 /* ==========================================================
+  ============================================================
+  V7 EXTENSIONS — FASE 1
+  Faltas & Abonos · Cadastro Expandido · Paginação A-Z
+  ------------------------------------------------------------
+  Estende módulos existentes de forma NÃO destrutiva.
+  Mantém compatibilidade total com registros V6.
+  ============================================================
+========================================================== */
+
+/* ---------- VALIDATE V7 ---------- */
+Validate.cpf = function(v){
+  const s=sanitize(v); if(!s) return{ok:true,value:''};
+  const d=s.replace(/\D/g,'');
+  if(d.length && d.length!==11) return{ok:false,msg:'CPF deve ter 11 dígitos'};
+  return{ok:true,value:s.length>14?s.slice(0,14):s};
+};
+Validate.email = function(v){
+  const s=sanitize(v); if(!s) return{ok:true,value:''};
+  if(s.length>120) return{ok:false,msg:'E-mail máx. 120 caracteres'};
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return{ok:false,msg:'E-mail inválido'};
+  return{ok:true,value:s};
+};
+Validate.tel = function(v){
+  const s=sanitize(v); if(!s) return{ok:true,value:''};
+  if(s.length>20) return{ok:false,msg:'Telefone máx. 20 caracteres'};
+  return{ok:true,value:s};
+};
+Validate.texto = function(v,max){
+  const s=sanitize(v); if(s.length>max) return{ok:false,msg:'Máximo '+max+' caracteres'};
+  return{ok:true,value:s};
+};
+Validate.qty = function(v){
+  const n=parseInt(v,10);
+  if(isNaN(n)||n<=0) return{ok:false,msg:'Quantidade deve ser maior que 0'};
+  if(n>365) return{ok:false,msg:'Quantidade máxima: 365'};
+  return{ok:true,value:n};
+};
+Validate.data = function(v){
+  const s=sanitize(v); if(!s) return{ok:false,msg:'Data é obrigatória'};
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return{ok:false,msg:'Data inválida'};
+  return{ok:true,value:s};
+};
+
+/* ---------- USERS V7 (migrate + novos campos + faltas/abonos) ---------- */
+
+/** Garante shape novo em registros antigos (idempotente) */
+Users.migrate = async function(){
+  let changed=false;
+  for(const u of (StorageManager.data.users||[])){
+    if(!Array.isArray(u.extraHours)){ u.extraHours=[]; changed=true; }
+    if(!Array.isArray(u.faltas))    { u.faltas=[];     changed=true; }
+    if(!Array.isArray(u.abonos))    { u.abonos=[];     changed=true; }
+    const defaults={cpf:'',telefone:'',email:'',endereco:'',observacoes:'',cargo:'',setorPrincipal:'',admissao:'',ativo:true};
+    for(const k in defaults){
+      if(typeof u[k]==='undefined'){ u[k]=defaults[k]; changed=true; }
+    }
+  }
+  if(changed){ await StorageManager.save(); console.info('[V7] Migração de usuários concluída'); }
+};
+
+/* Encapsula create/update originais para aceitar campos novos */
+Users._extraFields = ['cpf','telefone','email','endereco','observacoes','cargo','setorPrincipal','admissao'];
+
+const _origCreate = Users.create.bind(Users);
+Users.create = async function(data){
+  const u = await _origCreate(data);
+  /* enriquece o registro recém criado */
+  const validations = [
+    ['cpf',     Validate.cpf(data.cpf)],
+    ['email',   Validate.email(data.email)],
+    ['telefone',Validate.tel(data.telefone)],
+    ['endereco',Validate.texto(data.endereco||'',200)],
+    ['observacoes',Validate.texto(data.observacoes||'',500)],
+    ['cargo',   Validate.texto(data.cargo||'',80)],
+    ['setorPrincipal',Validate.texto(data.setorPrincipal||'',60)]
+  ];
+  for(const [k,r] of validations){ if(!r.ok) throw new Error(k+': '+r.msg); u[k]=r.value; }
+  u.admissao = sanitize(data.admissao||'');
+  u.ativo = data.ativo!==false;
+  u.faltas = []; u.abonos = [];
+  await StorageManager.save();
+  Users._refresh();
+  return u;
+};
+
+const _origUpdate = Users.update.bind(Users);
+Users.update = async function(id,data){
+  await _origUpdate(id,data);
+  const u = Users.getById(id); if(!u) return;
+  const map = {
+    cpf:Validate.cpf, email:Validate.email, telefone:Validate.tel,
+    endereco:v=>Validate.texto(v||'',200), observacoes:v=>Validate.texto(v||'',500),
+    cargo:v=>Validate.texto(v||'',80), setorPrincipal:v=>Validate.texto(v||'',60)
+  };
+  for(const k in map){
+    if(typeof data[k]!=='undefined'){
+      const r=map[k](data[k]); if(!r.ok) throw new Error(k+': '+r.msg); u[k]=r.value;
+    }
+  }
+  if(typeof data.admissao!=='undefined') u.admissao=sanitize(data.admissao);
+  if(typeof data.ativo!=='undefined')    u.ativo=!!data.ativo;
+  await StorageManager.save();
+  Users._refresh();
+};
+
+/* Patch _refresh para também atualizar a página de Faltas/Abonos */
+const _origRefresh = Users._refresh.bind(Users);
+Users._refresh = function(){
+  _origRefresh();
+  if(window.AbsencesPage && document.getElementById('absencesPage')?.classList.contains('active')){
+    AbsencesPage.render();
+  }
+};
+
+/* ---------- ABSENCE MANAGER (Faltas) ---------- */
+const AbsenceManager = {
+  async add(uid, payload){
+    const u = Users.getById(uid); if(!u) throw new Error('Usuário não encontrado');
+    const d=Validate.data(payload.data); if(!d.ok) throw new Error('Data: '+d.msg);
+    const q=Validate.qty(payload.quantidade); if(!q.ok) throw new Error(q.msg);
+    const m=Validate.texto(payload.motivo||'',120); if(!m.ok) throw new Error('Motivo: '+m.msg);
+    const o=Validate.texto(payload.observacao||'',300); if(!o.ok) throw new Error('Observação: '+o.msg);
+    if(!Array.isArray(u.faltas)) u.faltas=[];
+    u.faltas.push({id:uuid(),data:d.value,quantidade:q.value,motivo:m.value||'(não informado)',observacao:o.value,criadoEm:new Date().toISOString()});
+    await StorageManager.save();
+    await Audit.add('CRIAR: Falta('+q.value+'d) — '+u.nome, u.nome);
+    Users._refresh();
+  },
+  async remove(uid, fid){
+    const u = Users.getById(uid); if(!u) return;
+    u.faltas = (u.faltas||[]).filter(f=>f.id!==fid);
+    await StorageManager.save();
+    await Audit.add('EXCLUIR: Falta de '+u.nome, u.nome);
+    Users._refresh();
+  },
+  totalUser(u){ return (u.faltas||[]).reduce((a,f)=>a+(+f.quantidade||0),0); },
+  totalGlobal(){ return Users.getAll().reduce((a,u)=>a+AbsenceManager.totalUser(u),0); }
+};
+
+/* ---------- BONUS MANAGER (Abonos) ---------- */
+const BonusManager = {
+  async add(uid, payload){
+    const u = Users.getById(uid); if(!u) throw new Error('Usuário não encontrado');
+    const d=Validate.data(payload.data); if(!d.ok) throw new Error('Data: '+d.msg);
+    const q=Validate.qty(payload.quantidade); if(!q.ok) throw new Error(q.msg);
+    const m=Validate.texto(payload.motivo||'',120); if(!m.ok) throw new Error('Motivo: '+m.msg);
+    const o=Validate.texto(payload.observacao||'',300); if(!o.ok) throw new Error('Observação: '+o.msg);
+    if(!Array.isArray(u.abonos)) u.abonos=[];
+    u.abonos.push({id:uuid(),data:d.value,quantidade:q.value,motivo:m.value||'(não informado)',observacao:o.value,criadoEm:new Date().toISOString()});
+    await StorageManager.save();
+    await Audit.add('CRIAR: Abono('+q.value+'d) — '+u.nome, u.nome);
+    Users._refresh();
+  },
+  async remove(uid, bid){
+    const u = Users.getById(uid); if(!u) return;
+    u.abonos = (u.abonos||[]).filter(b=>b.id!==bid);
+    await StorageManager.save();
+    await Audit.add('EXCLUIR: Abono de '+u.nome, u.nome);
+    Users._refresh();
+  },
+  totalUser(u){ return (u.abonos||[]).reduce((a,b)=>a+(+b.quantidade||0),0); },
+  totalGlobal(){ return Users.getAll().reduce((a,u)=>a+BonusManager.totalUser(u),0); }
+};
+
+/* ---------- FILTER MANAGER V7 (sort + pagination + A-Z) ---------- */
+FilterManager.sort = 'az';
+FilterManager.pageSize = 20;
+FilterManager.page = 1;
+FilterManager.azLetter = '';
+
+const _origGetFiltered = FilterManager.getFiltered.bind(FilterManager);
+FilterManager.getFiltered = function(){
+  let list = _origGetFiltered();
+  if(this.azLetter){
+    const L=this.azLetter.toLowerCase();
+    list = list.filter(u=>(u.nome||'').trim().toLowerCase().startsWith(L));
+  }
+  const s=this.sort;
+  if(s==='az')        list = list.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+  else if(s==='za')   list = list.slice().sort((a,b)=>(b.nome||'').localeCompare(a.nome||'','pt-BR'));
+  else if(s==='recent')   list = list.slice().sort((a,b)=>(b.dataCadastro||'').localeCompare(a.dataCadastro||''));
+  else if(s==='plantoes') list = list.slice().sort((a,b)=>((b.extraHours||[]).length-(a.extraHours||[]).length));
+  return list;
+};
+FilterManager.apply = debounce(function(){
+  FilterManager.query=document.getElementById('searchInput')?.value||'';
+  FilterManager.statusFilter=document.getElementById('filterStatus')?.value||'all';
+  FilterManager.sistemaFilter=document.getElementById('filterSistema')?.value||'all';
+  FilterManager.sort=document.getElementById('filterSort')?.value||'az';
+  FilterManager.pageSize=parseInt(document.getElementById('filterPageSize')?.value||'20',10);
+  FilterManager.page=1;
+  Consulta.render();
+},220);
+
+/* ---------- CONSULTA V7 (paginação + A-Z + cards expandidos) ---------- */
+Consulta._renderAZ = function(letters){
+  const bar=document.getElementById('azBar'); if(!bar) return;
+  const all='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const used=new Set(letters);
+  bar.innerHTML = `<button class="az-btn ${!FilterManager.azLetter?'active':''}" onclick="Consulta._setLetter('')">Todos</button>` +
+    all.map(L=>{
+      const enabled=used.has(L);
+      const active=FilterManager.azLetter===L;
+      return `<button class="az-btn ${active?'active':''}" ${enabled?'':'disabled style="opacity:.3;cursor:not-allowed"'} onclick="Consulta._setLetter('${L}')">${L}</button>`;
+    }).join('');
+};
+Consulta._setLetter = function(L){
+  FilterManager.azLetter = L;
+  FilterManager.page = 1;
+  Consulta.render();
+};
+Consulta._renderPagination = function(total, page, size){
+  const el=document.getElementById('consultaPagination'); if(!el) return;
+  const pages = Math.max(1, Math.ceil(total/size));
+  if(pages<=1){ el.innerHTML=''; return; }
+  const btn=(p,lbl,opts={})=>`<button class="pag-btn ${opts.active?'active':''}" ${opts.disabled?'disabled':''} onclick="Consulta._goPage(${p})">${lbl}</button>`;
+  let html=btn(page-1,'‹',{disabled:page<=1});
+  /* janela ±2 */
+  const start=Math.max(1,page-2), end=Math.min(pages,page+2);
+  if(start>1){ html+=btn(1,'1'); if(start>2) html+='<span class="pag-info">…</span>'; }
+  for(let p=start;p<=end;p++) html+=btn(p,String(p),{active:p===page});
+  if(end<pages){ if(end<pages-1) html+='<span class="pag-info">…</span>'; html+=btn(pages,String(pages)); }
+  html+=btn(page+1,'›',{disabled:page>=pages});
+  html+=`<span class="pag-info">Pág ${page} de ${pages}</span>`;
+  el.innerHTML = html;
+};
+Consulta._goPage = function(p){
+  FilterManager.page = Math.max(1,p);
+  Consulta.render();
+  document.getElementById('consultaList')?.scrollIntoView({behavior:'smooth',block:'start'});
+};
+
+Consulta.render = function(){
+  const all = FilterManager.getFiltered();
+  const list = document.getElementById('consultaList');
+  const cnt  = document.getElementById('consultaCount');
+  if(!list) return;
+  /* letters disponíveis (sobre o conjunto SEM filtro A-Z) */
+  const oldAz = FilterManager.azLetter; FilterManager.azLetter='';
+  const letters = new Set((_origGetFiltered.call(FilterManager)||[]).map(u=>(u.nome||'').trim().charAt(0).toUpperCase()).filter(c=>/[A-Z]/.test(c)));
+  FilterManager.azLetter = oldAz;
+  this._renderAZ([...letters].sort());
+
+  if(cnt) cnt.textContent=`${all.length} usuário(s) encontrado(s)`;
+  if(!all.length){
+    list.innerHTML='<div class="card"><div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum resultado</div><div class="empty-desc">Ajuste os filtros ou cadastre um usuário</div></div></div>';
+    this._renderPagination(0,1,FilterManager.pageSize);
+    return;
+  }
+  const size = FilterManager.pageSize;
+  const pages = Math.max(1,Math.ceil(all.length/size));
+  if(FilterManager.page>pages) FilterManager.page=pages;
+  const start = (FilterManager.page-1)*size;
+  const slice = all.slice(start, start+size);
+  list.innerHTML = slice.map(u=>this._card(u)).join('');
+  this._renderPagination(all.length, FilterManager.page, size);
+};
+
+const _origCardFn = Consulta._card.bind(Consulta);
+Consulta._card = function(u){
+  const html = _origCardFn(u);
+  /* injeta metadados extras + faltas/abonos badge dentro do user-meta */
+  const fal = AbsenceManager.totalUser(u);
+  const abo = BonusManager.totalUser(u);
+  const meta = [];
+  if(u.cargo)          meta.push(`<span>💼 <strong>${esc(u.cargo)}</strong></span>`);
+  if(u.setorPrincipal) meta.push(`<span>🏥 ${esc(u.setorPrincipal)}</span>`);
+  if(u.telefone)       meta.push(`<span>📞 ${esc(u.telefone)}</span>`);
+  if(u.email)          meta.push(`<span>✉️ ${esc(u.email)}</span>`);
+  meta.push(`<span style="color:var(--danger)">❌ ${fal} falta(s)</span>`);
+  meta.push(`<span style="color:var(--success)">✅ ${abo} abono(s)</span>`);
+  if(u.ativo===false)  meta.push(`<span class="badge red" style="font-size:9.5px">INATIVO</span>`);
+  const extraHTML = `<div class="user-extra-meta">${meta.join(' ')}</div>`;
+  /* inserir antes do fechamento do .user-info do _card original */
+  return html.replace('</div>\n        <div class="user-actions"', extraHTML+'</div>\n        <div class="user-actions"');
+};
+
+/* ---------- CONSULTA: modais Novo/Editar expandidos ---------- */
+function _sectorOptions(selected){
+  const list=(Config.data.setores||[]).slice();
+  return ['<option value="">— selecione —</option>'].concat(list.map(s=>`<option value="${esc(s)}" ${selected===s?'selected':''}>${esc(s)}</option>`)).join('');
+}
+function _userFormHTML(u){
+  u = u||{};
+  return `
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="uPanelBasico" onclick="Consulta._tab(event)">📝 Básico</button>
+    <button class="tab-btn" data-tab="uPanelContato" onclick="Consulta._tab(event)">📞 Contato</button>
+    <button class="tab-btn" data-tab="uPanelProf"    onclick="Consulta._tab(event)">💼 Profissional</button>
+    <button class="tab-btn" data-tab="uPanelSis"     onclick="Consulta._tab(event)">🖥️ Sistemas</button>
+  </div>
+  <div class="tab-panel active" id="uPanelBasico">
+    <div class="form-grid">
+      <div class="form-group span-2"><label>Nome Completo *</label>
+        <input type="text" id="mNome" maxlength="150" value="${esc(u.nome||'')}"></div>
+      <div class="form-group"><label>CPF</label>
+        <input type="text" id="mCpf" maxlength="14" value="${esc(u.cpf||'')}" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Data de admissão</label>
+        <input type="date" id="mAdmissao" value="${esc(u.admissao||'')}"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="mAtivo"><option value="1" ${u.ativo!==false?'selected':''}>✅ Ativo</option><option value="0" ${u.ativo===false?'selected':''}>⛔ Inativo</option></select></div>
+      <div class="form-group span-2"><label>Observações</label>
+        <textarea id="mObs" maxlength="500" rows="2" style="resize:vertical;font:inherit;width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">${esc(u.observacoes||'')}</textarea></div>
+    </div>
+  </div>
+  <div class="tab-panel" id="uPanelContato">
+    <div class="form-grid">
+      <div class="form-group"><label>Telefone</label>
+        <input type="text" id="mTel" maxlength="20" value="${esc(u.telefone||'')}" placeholder="(00) 00000-0000"></div>
+      <div class="form-group"><label>E-mail</label>
+        <input type="email" id="mEmail" maxlength="120" value="${esc(u.email||'')}"></div>
+      <div class="form-group span-2"><label>Endereço</label>
+        <input type="text" id="mEnd" maxlength="200" value="${esc(u.endereco||'')}"></div>
+    </div>
+  </div>
+  <div class="tab-panel" id="uPanelProf">
+    <div class="form-grid">
+      <div class="form-group"><label>Cargo</label>
+        <input type="text" id="mCargo" maxlength="80" value="${esc(u.cargo||'')}"></div>
+      <div class="form-group"><label>Setor principal</label>
+        <select id="mSetorP">${_sectorOptions(u.setorPrincipal||'')}</select></div>
+    </div>
+  </div>
+  <div class="tab-panel" id="uPanelSis">
+    <div class="form-grid">
+      <div class="form-group"><label>eCidade</label>
+        <select id="mEc"><option value="Não" ${u.ecidade!=='Sim'?'selected':''}>Não</option><option value="Sim" ${u.ecidade==='Sim'?'selected':''}>Sim</option></select></div>
+      <div class="form-group"><label>CGM</label>
+        <select id="mCg"><option value="Não" ${u.cgm!=='Sim'?'selected':''}>Não</option><option value="Sim" ${u.cgm==='Sim'?'selected':''}>Sim</option></select></div>
+      <div class="form-group span-2"><label>NetTerm</label>
+        <select id="mNt"><option value="Não" ${u.netterm!=='Sim'?'selected':''}>Não</option><option value="Sim" ${u.netterm==='Sim'?'selected':''}>Sim</option></select></div>
+    </div>
+  </div>`;
+}
+Consulta._tab = function(e){
+  const t=e.currentTarget.dataset.tab;
+  e.currentTarget.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  const root=e.currentTarget.closest('.modal-body, .card, #cadastroPage') || document;
+  root.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id===t));
+};
+function _readUserForm(){
+  return {
+    nome:document.getElementById('mNome')?.value,
+    cpf:document.getElementById('mCpf')?.value||'',
+    admissao:document.getElementById('mAdmissao')?.value||'',
+    ativo:(document.getElementById('mAtivo')?.value||'1')==='1',
+    observacoes:document.getElementById('mObs')?.value||'',
+    telefone:document.getElementById('mTel')?.value||'',
+    email:document.getElementById('mEmail')?.value||'',
+    endereco:document.getElementById('mEnd')?.value||'',
+    cargo:document.getElementById('mCargo')?.value||'',
+    setorPrincipal:document.getElementById('mSetorP')?.value||'',
+    ecidade:document.getElementById('mEc')?.value||'Não',
+    cgm:document.getElementById('mCg')?.value||'Não',
+    netterm:document.getElementById('mNt')?.value||'Não'
+  };
+}
+Consulta.openAddUser = function(){
+  Modal.open('➕ Novo Usuário', _userFormHTML(null),
+    `<button class="btn-secondary" onclick="Modal.close()">Cancelar</button>
+     <button class="btn-primary" onclick="Consulta._doAddUser()">✅ Cadastrar</button>`);
+};
+Consulta._doAddUser = async function(){
+  try{ await Users.create(_readUserForm()); Modal.close(); UI.toast('Usuário cadastrado!'); }
+  catch(e){ UI.toast(e.message,'error'); }
+};
+Consulta.openEdit = function(id){
+  const u=Users.getById(id); if(!u) return;
+  Modal.open('✏️ Editar Usuário', _userFormHTML(u),
+    `<button class="btn-secondary" onclick="Modal.close()">Cancelar</button>
+     <button class="btn-primary" onclick="Consulta._doEdit('${id}')">💾 Salvar</button>`);
+};
+Consulta._doEdit = async function(id){
+  try{ await Users.update(id,_readUserForm()); Modal.close(); UI.toast('Usuário atualizado!'); }
+  catch(e){ UI.toast(e.message,'error'); }
+};
+
+/* ---------- CADASTRO V7 ---------- */
+Cadastro.tab = function(e){
+  const t=e.currentTarget.dataset.tab;
+  document.querySelectorAll('#cadTabs .tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  document.querySelectorAll('#cadastroPage .tab-panel').forEach(p=>p.classList.toggle('active', p.id===t));
+};
+Cadastro._populateSetor = function(){
+  const sel=document.getElementById('cSetorPrincipal'); if(!sel) return;
+  sel.innerHTML=_sectorOptions(sel.value||'');
+};
+Cadastro.submit = async function(){
+  try{
+    await Users.create({
+      nome:document.getElementById('cNome')?.value,
+      cpf:document.getElementById('cCpf')?.value||'',
+      admissao:document.getElementById('cAdmissao')?.value||'',
+      observacoes:document.getElementById('cObs')?.value||'',
+      telefone:document.getElementById('cTelefone')?.value||'',
+      email:document.getElementById('cEmail')?.value||'',
+      endereco:document.getElementById('cEndereco')?.value||'',
+      cargo:document.getElementById('cCargo')?.value||'',
+      setorPrincipal:document.getElementById('cSetorPrincipal')?.value||'',
+      ecidade:document.getElementById('cEcidade')?.value||'Não',
+      cgm:document.getElementById('cCgm')?.value||'Não',
+      netterm:document.getElementById('cNetterm')?.value||'Não'
+    });
+    this.reset();
+    UI.toast('Usuário cadastrado com sucesso!');
+  }catch(e){ UI.toast(e.message,'error'); document.getElementById('cNome')?.focus(); }
+};
+Cadastro.reset = function(){
+  ['cNome','cCpf','cAdmissao','cObs','cTelefone','cEmail','cEndereco','cCargo'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['cEcidade','cCgm','cNetterm'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value='Não'; });
+  const sp=document.getElementById('cSetorPrincipal'); if(sp) sp.value='';
+  document.getElementById('cNome')?.focus();
+};
+
+/* ---------- DASHBOARD V7 (adiciona 2 stat cards) ---------- */
+const _origDashRender = Dashboard.render.bind(Dashboard);
+Dashboard.render = function(){
+  _origDashRender();
+  const el=document.getElementById('dashStats'); if(!el) return;
+  const fal=AbsenceManager.totalGlobal();
+  const abo=BonusManager.totalGlobal();
+  const inativos = Users.getAll().filter(u=>u.ativo===false).length;
+  const criticos = Users.getAll().filter(u=>AbsenceManager.totalUser(u)>=3).length;
+  el.insertAdjacentHTML('beforeend', `
+    <div class="stat-card" style="background:linear-gradient(135deg,#dc2626,#991b1b)">
+      <div class="stat-num">${fal}</div>
+      <div class="stat-label">❌ Faltas (dias)</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#0891b2,#0e7490)">
+      <div class="stat-num">${abo}</div>
+      <div class="stat-label">✅ Abonos (dias)</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)">
+      <div class="stat-num">${criticos}</div>
+      <div class="stat-label">⚠️ Usuários críticos (≥3 faltas)</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#475569,#1e293b)">
+      <div class="stat-num">${inativos}</div>
+      <div class="stat-label">⛔ Usuários inativos</div>
+    </div>`);
+};
+
+/* ---------- ABSENCES PAGE ---------- */
+const AbsencesPage = {
+  _query:'', _tab:'all',
+  search: debounce(function(){
+    AbsencesPage._query = document.getElementById('faSearch')?.value||'';
+    AbsencesPage.render();
+  },220),
+  setTab(v){ this._tab=v||'all'; this.render(); },
+
+  render(){
+    const root=document.getElementById('faContent'); if(!root) return;
+    /* Global summary */
+    const sumEl=document.getElementById('faGlobalSummary');
+    if(sumEl){
+      const fal=AbsenceManager.totalGlobal(), abo=BonusManager.totalGlobal();
+      const totalUsers=Users.getAll().length;
+      const criticos=Users.getAll().filter(u=>AbsenceManager.totalUser(u)>=3).length;
+      sumEl.innerHTML = `
+        <div class="fa-pill"><div class="fa-pill-num" style="color:var(--danger)">${fal}</div><div class="fa-pill-lbl">Faltas totais</div></div>
+        <div class="fa-pill"><div class="fa-pill-num" style="color:var(--success)">${abo}</div><div class="fa-pill-lbl">Abonos totais</div></div>
+        <div class="fa-pill"><div class="fa-pill-num" style="color:var(--warning)">${criticos}</div><div class="fa-pill-lbl">Usuários críticos</div></div>
+        <div class="fa-pill"><div class="fa-pill-num">${totalUsers}</div><div class="fa-pill-lbl">Usuários</div></div>`;
+    }
+    const q=this._query.toLowerCase().trim();
+    let users = Users.getAll().slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+    if(q) users = users.filter(u=>(u.nome||'').toLowerCase().includes(q));
+    if(this._tab==='faltas') users = users.filter(u=>(u.faltas||[]).length>0);
+    if(this._tab==='abonos') users = users.filter(u=>(u.abonos||[]).length>0);
+
+    if(!users.length){
+      root.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nenhum registro</div><div class="empty-desc">Cadastre usuários ou ajuste o filtro.</div></div></div>';
+      return;
+    }
+    root.innerHTML = users.map(u=>AbsencesPage._userCard(u)).join('');
+  },
+
+  _userCard(u){
+    const fal=u.faltas||[], abo=u.abonos||[];
+    const totF=AbsenceManager.totalUser(u), totA=BonusManager.totalUser(u);
+    const showF = this._tab!=='abonos';
+    const showA = this._tab!=='faltas';
+    return `
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div>
+          <div style="font-weight:700;font-size:14.5px">${esc(u.nome)} ${u.ativo===false?'<span class="badge red" style="font-size:9.5px">INATIVO</span>':''}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px">
+            ${u.cargo?esc(u.cargo)+' · ':''}${u.setorPrincipal?esc(u.setorPrincipal):'—'}
+          </div>
+        </div>
+        <div class="actions">
+          <span class="fa-pill" style="padding:6px 12px"><span class="fa-pill-num" style="font-size:14px;color:var(--danger)">${totF}</span><span class="fa-pill-lbl">faltas</span></span>
+          <span class="fa-pill" style="padding:6px 12px"><span class="fa-pill-num" style="font-size:14px;color:var(--success)">${totA}</span><span class="fa-pill-lbl">abonos</span></span>
+        </div>
+      </div>
+
+      ${showF?`
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-weight:700;font-size:12.5px;color:var(--danger)">❌ FALTAS</div>
+          <button class="btn-danger btn-sm" style="width:auto" onclick="AbsencesPage.openAddFalta('${u.id}')">+ Registrar falta</button>
+        </div>
+        ${fal.length?fal.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')).map(f=>`
+          <div class="fa-row">
+            <div class="fa-date">${fmtDate(f.data)}</div>
+            <div class="fa-qty">${f.quantidade}d</div>
+            <div class="fa-info">
+              <div class="fa-motivo">${esc(f.motivo)}</div>
+              ${f.observacao?`<div class="fa-obs">${esc(f.observacao)}</div>`:''}
+            </div>
+            <button class="btn-ghost btn-xs" style="width:auto" onclick="AbsencesPage.confirmRemoveFalta('${u.id}','${f.id}')" title="Remover">🗑️</button>
+          </div>`).join(''):'<div class="empty" style="padding:14px 0;font-size:12px;color:var(--muted)">Nenhuma falta registrada.</div>'}
+      </div>`:''}
+
+      ${showA?`
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-weight:700;font-size:12.5px;color:var(--success)">✅ ABONOS</div>
+          <button class="btn-success btn-sm" style="width:auto" onclick="AbsencesPage.openAddAbono('${u.id}')">+ Registrar abono</button>
+        </div>
+        ${abo.length?abo.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')).map(b=>`
+          <div class="fa-row">
+            <div class="fa-date">${fmtDate(b.data)}</div>
+            <div class="fa-qty">${b.quantidade}d</div>
+            <div class="fa-info">
+              <div class="fa-motivo">${esc(b.motivo)}</div>
+              ${b.observacao?`<div class="fa-obs">${esc(b.observacao)}</div>`:''}
+            </div>
+            <button class="btn-ghost btn-xs" style="width:auto" onclick="AbsencesPage.confirmRemoveAbono('${u.id}','${b.id}')" title="Remover">🗑️</button>
+          </div>`).join(''):'<div class="empty" style="padding:14px 0;font-size:12px;color:var(--muted)">Nenhum abono registrado.</div>'}
+      </div>`:''}
+    </div>`;
+  },
+
+  _formHTML(kind){
+    const today=new Date().toISOString().slice(0,10);
+    return `<div class="form-grid">
+      <div class="form-group"><label>Data *</label><input type="date" id="faData" value="${today}"></div>
+      <div class="form-group"><label>Quantidade (dias) *</label><input type="number" id="faQty" min="1" max="365" value="1"></div>
+      <div class="form-group span-2"><label>Motivo *</label>
+        <input type="text" id="faMotivo" maxlength="120" placeholder="${kind==='falta'?'Ex: Atestado médico, ausência injustificada...':'Ex: Atestado, férias, banco de horas...'}"></div>
+      <div class="form-group span-2"><label>Observação</label>
+        <textarea id="faObs" maxlength="300" rows="2" style="resize:vertical;font:inherit;width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)"></textarea></div>
+    </div>`;
+  },
+  _readForm(){
+    return {
+      data:document.getElementById('faData')?.value,
+      quantidade:document.getElementById('faQty')?.value,
+      motivo:document.getElementById('faMotivo')?.value||'',
+      observacao:document.getElementById('faObs')?.value||''
+    };
+  },
+  openAddFalta(uid){
+    const u=Users.getById(uid); if(!u) return;
+    Modal.open(`❌ Registrar falta — ${esc(u.nome)}`, this._formHTML('falta'),
+      `<button class="btn-secondary" onclick="Modal.close()">Cancelar</button>
+       <button class="btn-danger" onclick="AbsencesPage._doAddFalta('${uid}')">💾 Registrar</button>`);
+  },
+  async _doAddFalta(uid){
+    try{ await AbsenceManager.add(uid,this._readForm()); Modal.close(); UI.toast('Falta registrada','warning'); }
+    catch(e){ UI.toast(e.message,'error'); }
+  },
+  openAddAbono(uid){
+    const u=Users.getById(uid); if(!u) return;
+    Modal.open(`✅ Registrar abono — ${esc(u.nome)}`, this._formHTML('abono'),
+      `<button class="btn-secondary" onclick="Modal.close()">Cancelar</button>
+       <button class="btn-success" onclick="AbsencesPage._doAddAbono('${uid}')">💾 Registrar</button>`);
+  },
+  async _doAddAbono(uid){
+    try{ await BonusManager.add(uid,this._readForm()); Modal.close(); UI.toast('Abono registrado'); }
+    catch(e){ UI.toast(e.message,'error'); }
+  },
+  confirmRemoveFalta(uid,fid){
+    Modal.open('🗑️ Remover falta',
+      `<div style="text-align:center;padding:18px 0"><div style="font-size:30px">⚠️</div><div style="font-weight:600;margin-top:8px">Remover este registro de falta?</div></div>`,
+      `<button class="btn-secondary" onclick="Modal.close()">Cancelar</button>
+       <button class="btn-danger" onclick="AbsencesPage._doRemoveFalta('${uid}','${fid}')">🗑️ Remover</button>`);
+  },
+  async _doRemoveFalta(uid,fid){ await AbsenceManager.remove(uid,fid); Modal.close(); UI.toast('Falta removida','warning'); },
+  confirmRemoveAbono(uid,bid){
+    Modal.open('🗑️ Remover abono',
+      `<div style="text-align:center;padding:18px 0"><div style="font-size:30px">⚠️</div><div style="font-weight:600;margin-top:8px">Remover este registro de abono?</div></div>`,
+      `<button class="btn-secondary" onclick="Modal.close()">Cancelar</button>
+       <button class="btn-danger" onclick="AbsencesPage._doRemoveAbono('${uid}','${bid}')">🗑️ Remover</button>`);
+  },
+  async _doRemoveAbono(uid,bid){ await BonusManager.remove(uid,bid); Modal.close(); UI.toast('Abono removido','warning'); }
+};
+window.AbsencesPage = AbsencesPage;
+window.AbsenceManager = AbsenceManager;
+window.BonusManager = BonusManager;
+
+/* ---------- UI V7 (registra meta + hook página) ---------- */
+UI._meta.absencesPage = {title:'Faltas & Abonos', sub:'Controle de faltas e abonos por usuário'};
+const _origGo = UI.go.bind(UI);
+UI.go = function(pageId, btn){
+  _origGo(pageId, btn);
+  if(pageId==='absencesPage') AbsencesPage.render();
+  if(pageId==='cadastroPage') Cadastro._populateSetor();
+};
+
+/* ==========================================================
   INIT — Inicialização assíncrona do sistema
 ========================================================== */
 (async()=>{
@@ -2528,6 +3264,9 @@ function lazyRender(list,callback,chunk=10){
     /* 4 — Dados principais */
     await StorageManager.load();
 
+    /* 4.1 — Migração V7 (idempotente): garante faltas/abonos + campos novos */
+    await Users.migrate();
+
     /* 5 — Auditoria e Backups */
     Audit.logs=await Indexed.getAll('logs');
     Backup.snapshots=await Indexed.getAll('backups');
@@ -2537,6 +3276,7 @@ function lazyRender(list,callback,chunk=10){
     Audit.render();
     Backup.render();
     Consulta.render();
+    if(typeof Cadastro._populateSetor==='function') Cadastro._populateSetor();
 
     /* 7 — PWA */
     PWA.init();
@@ -2558,6 +3298,637 @@ function lazyRender(list,callback,chunk=10){
   }catch(err){
     console.error('[ERP V6] Erro na inicialização:',err);
   }
+})();
+
+/* ==========================================================
+  V8 EXTENSIONS — Tema customizável · Dashboard agrupado ·
+  Rubricas · Filtros plantão · Paginação F&A ·
+  PowerBI extras · Auditoria com busca · Backup com logs
+========================================================== */
+(function(){
+'use strict';
+
+/* ---------- CSS injetado ---------- */
+const _css = `
+.theme-swatch{display:inline-block;width:22px;height:22px;border-radius:6px;border:2px solid var(--border);vertical-align:middle;margin-right:6px;cursor:pointer}
+.theme-swatch.sel{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-glow)}
+.color-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.color-row label{flex:1;font-size:13px;color:var(--text2)}
+.color-row input[type=color]{width:46px;height:34px;padding:0;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer}
+.dash-group{margin:18px 0 6px;padding:10px 14px;background:var(--bg2);border-left:4px solid var(--primary);border-radius:8px}
+.dash-group-title{font-weight:800;font-size:13px;color:var(--text);letter-spacing:.4px;text-transform:uppercase}
+.dash-group-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.rubrica-row{display:grid;grid-template-columns:140px 1fr auto;gap:8px;margin-bottom:6px;align-items:center}
+.rubrica-row input{width:100%}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.kpi-card .kpi-num{font-size:22px;font-weight:800;letter-spacing:-1px}
+.kpi-card .kpi-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-bar{height:6px;background:var(--bg2);border-radius:3px;margin-top:8px;overflow:hidden}
+.kpi-bar > div{height:100%;border-radius:3px;transition:width .4s}
+#auditSearchWrap{margin-bottom:10px}
+#auditSearchWrap input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)}
+.fa-pag-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 4px}
+`;
+const _st=document.createElement('style'); _st.textContent=_css; document.head.appendChild(_st);
+
+/* ==========================================================
+  1) TEMA — Configurador de Esquema de Cores
+========================================================== */
+const ThemeCustom = {
+  KEY:'erp_theme_colors',
+  vars:[
+    {k:'--primary',  lbl:'Primária',          def:'#2563eb'},
+    {k:'--primary-h',lbl:'Primária (hover)',  def:'#1d4ed8'},
+    {k:'--success',  lbl:'Secundária / Sucesso', def:'#16a34a'},
+    {k:'--bg',       lbl:'Fundo',             def:'#f0f4f8'},
+    {k:'--card',     lbl:'Cartões',           def:'#ffffff'},
+    {k:'--text',     lbl:'Texto principal',   def:'#0f172a'}
+  ],
+  load(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(this.KEY)||'{}');
+      this.apply(saved);
+    }catch(e){}
+  },
+  apply(map){
+    this.vars.forEach(v=>{
+      const val = map[v.k];
+      if(val) document.documentElement.style.setProperty(v.k, val);
+      else document.documentElement.style.removeProperty(v.k);
+    });
+    if(window.Dashboard) try{ Dashboard.drawCharts && Dashboard.drawCharts(); }catch(e){}
+  },
+  current(){
+    let m={}; try{ m = JSON.parse(localStorage.getItem(this.KEY)||'{}'); }catch(e){}
+    return m;
+  },
+  openPanel(){
+    const cur = this.current();
+    const rows = this.vars.map(v=>{
+      const val = cur[v.k] || v.def;
+      return `<div class="color-row">
+        <label>${v.lbl}</label>
+        <input type="color" data-var="${v.k}" value="${val}" oninput="ThemeCustom._preview(this)">
+        <button class="btn-ghost btn-xs" style="width:auto" onclick="ThemeCustom._resetOne('${v.k}','${v.def}')">↺</button>
+      </div>`;
+    }).join('');
+    const body = `
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Personalize o esquema de cores. As alterações são aplicadas em tempo real.</div>
+      ${rows}
+      <hr class="divider">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary btn-sm" style="width:auto" onclick="ThemeCustom._resetAll()">↺ Restaurar padrões</button>
+      </div>`;
+    Modal.open('🎨 Esquema de Cores', body,
+      `<button class="btn-secondary" onclick="ThemeCustom._cancel()">Cancelar</button>
+       <button class="btn-primary" onclick="ThemeCustom._save()">💾 Salvar</button>`);
+    this._snapshot = this.current();
+  },
+  _preview(input){
+    document.documentElement.style.setProperty(input.dataset.var, input.value);
+    if(window.Dashboard) try{ Dashboard.drawCharts && Dashboard.drawCharts(); }catch(e){}
+  },
+  _readForm(){
+    const m={}; document.querySelectorAll('#modalBody input[type=color]').forEach(i=>{ m[i.dataset.var]=i.value; });
+    return m;
+  },
+  _save(){
+    const m=this._readForm();
+    localStorage.setItem(this.KEY, JSON.stringify(m));
+    this.apply(m);
+    Modal.close(); UI.toast('Esquema de cores salvo!');
+  },
+  _cancel(){ this.apply(this._snapshot||{}); Modal.close(); },
+  _resetOne(k,def){
+    document.documentElement.style.setProperty(k,def);
+    const i=document.querySelector(`#modalBody input[data-var="${k}"]`); if(i) i.value=def;
+  },
+  _resetAll(){
+    localStorage.removeItem(this.KEY);
+    this.vars.forEach(v=>document.documentElement.style.removeProperty(v.k));
+    Modal.close(); UI.toast('Cores restauradas');
+  }
+};
+window.ThemeCustom = ThemeCustom;
+ThemeCustom.load();
+
+/* Injeta botão de paleta no header (ao lado do botão de tema) */
+function _injectThemeBtn(){
+  const themeBtn = document.querySelector('.header-right button[onclick*="Theme.toggle"]');
+  if(!themeBtn || document.getElementById('btnThemeColors')) return;
+  const b = document.createElement('button');
+  b.id='btnThemeColors';
+  b.className='btn-secondary btn-sm';
+  b.style.width='auto';
+  b.title='Personalizar cores';
+  b.innerHTML='🎨';
+  b.onclick=()=>ThemeCustom.openPanel();
+  themeBtn.parentElement.insertBefore(b, themeBtn);
+}
+document.addEventListener('DOMContentLoaded', _injectThemeBtn);
+setTimeout(_injectThemeBtn, 300);
+
+/* ==========================================================
+  2) DASHBOARD — Agrupamento + Receita Mensal + PowerBI
+========================================================== */
+function _safeMoney(n){ const v=Number(n); return (isFinite(v)?v:0); }
+
+const _origDashRender2 = Dashboard.render.bind(Dashboard);
+Dashboard.render = function(){
+  _origDashRender2();
+  const stats = document.getElementById('dashStats');
+  if(stats){
+    /* Sanitiza qualquer "NaN" residual nos cards de receita */
+    stats.querySelectorAll('.stat-num').forEach(el=>{
+      if(/NaN/i.test(el.textContent)) el.textContent='R$ 0,00';
+    });
+    /* Agrupa os stat cards em 3 grupos visuais */
+    _groupDashStats();
+  }
+  _renderDashPowerBI();
+};
+
+function _groupDashStats(){
+  const stats = document.getElementById('dashStats');
+  if(!stats || stats.dataset.grouped==='1') return;
+  const cards = Array.from(stats.children);
+  if(cards.length < 4) return;
+  /* Mapeamento por rótulo */
+  const findByLabel = (re)=>cards.find(c=>re.test(c.textContent||''));
+  const total = findByLabel(/Total de Usuários/i);
+  const inativos = findByLabel(/inativos/i);
+  const ativosCount = (window.Users?.getAll()||[]).filter(u=>u.ativo!==false).length;
+  /* Cria card "Ativos" derivado */
+  const ativos = document.createElement('div');
+  ativos.className='stat-card';
+  ativos.style.background='linear-gradient(135deg,#16a34a,#15803d)';
+  ativos.innerHTML=`<div class="stat-num">${ativosCount}</div><div class="stat-label">✅ Usuários Ativos</div>`;
+
+  const totalPlantoes = findByLabel(/Total de Plantões/i);
+  const pago = findByLabel(/Total Pago/i);
+  const pend = findByLabel(/Total Pendente/i);
+  const criticos = findByLabel(/críticos/i);
+  const faltas = findByLabel(/Faltas \(dias\)/i);
+  const abonos = findByLabel(/Abonos \(dias\)/i);
+
+  /* Limpa e remonta com grupos */
+  stats.innerHTML='';
+  stats.dataset.grouped='1';
+  stats.style.display='block';
+
+  const mk = (title, sub, items)=>{
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<div class="dash-group"><div class="dash-group-title">${title}</div><div class="dash-group-sub">${sub}</div></div>`;
+    const grid = document.createElement('div');
+    grid.className='grid';
+    items.filter(Boolean).forEach(c=>grid.appendChild(c));
+    stats.appendChild(wrap.firstChild);
+    stats.appendChild(grid);
+  };
+  mk('Grupo 01 · Usuários','Visão geral de cadastros',[total, ativos, inativos]);
+  mk('Grupo 02 · Métricas Financeiras','Plantões e receitas',[totalPlantoes, pago, pend]);
+  mk('Grupo 03 · Faltas e Abonos','Indicadores de presença',[faltas, abonos, criticos]);
+}
+
+function _renderDashPowerBI(){
+  const page = document.getElementById('dashboardPage'); if(!page) return;
+  let host = document.getElementById('dashPowerBI');
+  if(!host){
+    host = document.createElement('div');
+    host.id='dashPowerBI';
+    page.appendChild(host);
+  }
+  const users = (window.Users?.getAll && Users.getAll()) || [];
+  const all = users.flatMap(u=>u.extraHours||[]);
+  const ativos = users.filter(u=>u.ativo!==false).length;
+  const inativos = users.length - ativos;
+
+  /* Cadastros por mês (últimos 6) */
+  const now = new Date();
+  const months = Array.from({length:6},(_,i)=>{
+    const d = new Date(now.getFullYear(), now.getMonth()-5+i, 1);
+    return {key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+            label:d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')};
+  });
+  const monthCount = months.map(m=>users.filter(u=>(u.dataCadastro||'').startsWith(m.key)).length);
+
+  /* Resumo financeiro mensal */
+  const finRows = months.map(m=>{
+    const hs = all.filter(h=>(h.dia||'').startsWith(m.key));
+    const pg = _safeMoney(hs.filter(h=>h.status==='Pago').reduce((a,h)=>a+parseVal(h.valor),0));
+    const pe = _safeMoney(hs.filter(h=>h.status==='Pendente').reduce((a,h)=>a+parseVal(h.valor),0));
+    return {m:m.label, qty:hs.length, pg, pe, tot:pg+pe};
+  });
+
+  host.innerHTML = `
+    <div class="dash-group" style="border-left-color:var(--purple);margin-top:24px">
+      <div class="dash-group-title">📊 PowerBI · Visões Analíticas</div>
+      <div class="dash-group-sub">Pizza · Barras de cadastros · Resumo financeiro</div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🥧 Status Ativos vs Inativos</div>
+        <div class="chart-wrap"><canvas class="chart" id="pbiPie" height="190"></canvas></div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>Ativos (${ativos})</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Inativos (${inativos})</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Cadastros por Mês (6m)</div>
+        <div class="chart-wrap"><canvas class="chart" id="pbiBarCad" height="190"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💰 Resumo Financeiro Mensal</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mês</th><th>Plantões</th><th>Pago</th><th>Pendente</th><th>Total</th></tr></thead>
+        <tbody>${finRows.map(r=>`<tr>
+          <td><strong>${r.m}</strong></td>
+          <td>${r.qty}</td>
+          <td style="color:var(--success)">${fmtCurrency(r.pg)}</td>
+          <td style="color:var(--warning)">${fmtCurrency(r.pe)}</td>
+          <td><strong>${fmtCurrency(r.tot)}</strong></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+
+  setTimeout(()=>{
+    if(window.Charts){
+      Charts.donut('pbiPie',[
+        {label:'Ativos',value:ativos,color:'#16a34a'},
+        {label:'Inativos',value:inativos,color:'#dc2626'}
+      ]);
+      Charts.bar('pbiBarCad', months.map(m=>m.label), monthCount, '#7c3aed');
+    }
+  },60);
+}
+
+/* ==========================================================
+  3) CADASTRO — RUBRICAS no formulário do usuário
+========================================================== */
+const Rubricas = {
+  _list:[],
+  reset(arr){ this._list = Array.isArray(arr)?arr.map(r=>({numero:r.numero||'',descricao:r.descricao||''})):[]; this._render(); },
+  add(){ this._list.push({numero:'',descricao:''}); this._render(); },
+  remove(i){ this._list.splice(i,1); this._render(); },
+  read(host){
+    const rows = (host||document).querySelectorAll('.rubrica-row');
+    return Array.from(rows).map(r=>({
+      numero: (r.querySelector('[data-rk=num]')?.value||'').trim(),
+      descricao: (r.querySelector('[data-rk=desc]')?.value||'').trim()
+    })).filter(r=>r.numero||r.descricao);
+  },
+  _render(){
+    const host = document.getElementById('rubricasList'); if(!host) return;
+    if(!this._list.length){
+      host.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">Nenhuma rubrica.</div>';
+      return;
+    }
+    host.innerHTML = this._list.map((r,i)=>`
+      <div class="rubrica-row">
+        <input type="text" data-rk="num" maxlength="20" placeholder="Número" value="${esc(r.numero||'')}" oninput="Rubricas._sync(${i},'numero',this.value)">
+        <input type="text" data-rk="desc" maxlength="120" placeholder="Descrição" value="${esc(r.descricao||'')}" oninput="Rubricas._sync(${i},'descricao',this.value)">
+        <button class="btn-ghost btn-xs" style="width:auto" onclick="Rubricas.remove(${i})" title="Remover">🗑️</button>
+      </div>`).join('');
+  },
+  _sync(i,k,v){ if(this._list[i]) this._list[i][k]=v; },
+  sectionHTML(){
+    return `<hr class="divider">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:700;font-size:13px">🧾 Rubricas</div>
+        <button class="btn-primary btn-sm" style="width:auto" onclick="Rubricas.add()">+ Adicionar Rubrica</button>
+      </div>
+      <div id="rubricasList"></div>`;
+  }
+};
+window.Rubricas = Rubricas;
+
+/* Patch do formulário do modal (Novo/Editar) e do cadastro */
+const _origUserFormHTML = window._userFormHTML;
+window._userFormHTML = function(u){
+  const html = _origUserFormHTML(u);
+  /* Anexa seção Rubricas no fim */
+  setTimeout(()=>{ Rubricas.reset(u?.rubricas||[]); },30);
+  return html + Rubricas.sectionHTML();
+};
+const _origReadUserForm = window._readUserForm;
+window._readUserForm = function(){
+  const d = _origReadUserForm();
+  d.rubricas = Rubricas.read(document.getElementById('modalBody'));
+  return d;
+};
+/* Cadastro page (form fixo): injeta seção e estende submit/reset */
+function _injectCadastroRubricas(){
+  const page = document.getElementById('cadastroPage'); if(!page) return;
+  if(page.querySelector('#rubricasList')) return;
+  const lastCard = page.querySelector('.card');
+  if(!lastCard) return;
+  const div = document.createElement('div');
+  div.innerHTML = Rubricas.sectionHTML();
+  const actions = lastCard.querySelector('.actions');
+  if(actions) actions.parentElement.insertBefore(div, actions.previousElementSibling || actions);
+  else lastCard.appendChild(div);
+  Rubricas.reset([]);
+}
+const _origCadSubmit = Cadastro.submit.bind(Cadastro);
+Cadastro.submit = async function(){
+  /* hook captura rubricas via _origCreate -> Users.create já chamado dentro; intercepta criando antes */
+  const rubricas = Rubricas.read(document.getElementById('cadastroPage'));
+  /* override temporário em Users.create para anexar rubricas */
+  const realCreate = Users.create.bind(Users);
+  Users.create = async function(d){ d.rubricas = rubricas; return realCreate(d); };
+  try{ await _origCadSubmit(); }
+  finally{ Users.create = realCreate; Rubricas.reset([]); }
+};
+
+/* ==========================================================
+  4) CONSULTA — Filtros de plantão (data + setor) + Limpar
+========================================================== */
+function _injectConsultaFilters(){
+  const page = document.getElementById('consultaPage'); if(!page) return;
+  if(page.querySelector('#filterPlantaoBar')) return;
+  const bar = page.querySelector('.filter-bar'); if(!bar) return;
+  const wrap = document.createElement('div');
+  wrap.id='filterPlantaoBar';
+  wrap.className='filter-bar';
+  wrap.style.marginTop='8px';
+  const setores = (Config?.data?.setores||[]).map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  wrap.innerHTML = `
+    <input type="date" id="fpDataIni" title="Plantão · data início" onchange="FilterManager.apply()">
+    <input type="date" id="fpDataFim" title="Plantão · data fim" onchange="FilterManager.apply()">
+    <select id="fpSetor" onchange="FilterManager.apply()" title="Setor do plantão">
+      <option value="">Todos os setores</option>${setores}
+    </select>
+    <button class="btn-ghost btn-sm" style="width:auto" onclick="FilterManager.clearAll()">🧹 Limpar Filtros</button>`;
+  bar.parentElement.insertBefore(wrap, bar.nextSibling);
+}
+
+/* Estende FilterManager.getFiltered com filtros de plantão */
+const _origGetFiltered2 = FilterManager.getFiltered.bind(FilterManager);
+FilterManager.getFiltered = function(){
+  let list = _origGetFiltered2();
+  const di = document.getElementById('fpDataIni')?.value||'';
+  const df = document.getElementById('fpDataFim')?.value||'';
+  const st = document.getElementById('fpSetor')?.value||'';
+  if(di||df||st){
+    list = list.filter(u=>{
+      const hs = u.extraHours||[];
+      return hs.some(h=>{
+        if(st && (h.setor||'')!==st) return false;
+        if(di && (h.dia||'')<di) return false;
+        if(df && (h.dia||'')>df) return false;
+        return true;
+      });
+    });
+  }
+  return list;
+};
+FilterManager.clearAll = function(){
+  ['searchInput','fpDataIni','fpDataFim'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  ['filterStatus','filterSistema','fpSetor'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value = id==='fpSetor'?'':'all'; });
+  const fs=document.getElementById('filterSort'); if(fs) fs.value='az';
+  this.azLetter=''; this.page=1;
+  this.apply();
+  UI.toast('Filtros limpos','info',1800);
+};
+
+/* ==========================================================
+  5) FALTAS & ABONOS — Paginação
+========================================================== */
+const FAPag = { page:1, size:10 };
+window.FAPag = FAPag;
+FAPag.setSize = function(v){ this.size=parseInt(v,10)||10; this.page=1; AbsencesPage.render(); };
+FAPag.go = function(p){ this.page=Math.max(1,p); AbsencesPage.render(); document.getElementById('faContent')?.scrollIntoView({behavior:'smooth',block:'start'}); };
+
+const _origFArender = AbsencesPage.render.bind(AbsencesPage);
+AbsencesPage.render = function(){
+  _origFArender();
+  /* aplica paginação no conteúdo já renderizado */
+  const host = document.getElementById('faContent'); if(!host) return;
+  const cards = Array.from(host.querySelectorAll(':scope > .card'));
+  if(cards.length<=0) return;
+  /* injeta seletor de tamanho no topo */
+  let bar = document.getElementById('faPagTop');
+  if(!bar){
+    bar = document.createElement('div'); bar.id='faPagTop'; bar.className='fa-pag-bar';
+    host.parentElement.insertBefore(bar, host);
+  }
+  const total = cards.length;
+  const pages = Math.max(1, Math.ceil(total/FAPag.size));
+  if(FAPag.page>pages) FAPag.page=pages;
+  const start = (FAPag.page-1)*FAPag.size;
+  cards.forEach((c,i)=>{ c.style.display = (i>=start && i<start+FAPag.size) ? '' : 'none'; });
+
+  const sizeSel = `<label style="font-size:12px;color:var(--muted)">Itens:
+    <select onchange="FAPag.setSize(this.value)" style="margin-left:4px">
+      ${[10,20,50].map(n=>`<option value="${n}" ${FAPag.size===n?'selected':''}>${n}</option>`).join('')}
+    </select></label>`;
+  let pag = '';
+  if(pages>1){
+    pag = `<div>
+      <button class="pag-btn" ${FAPag.page<=1?'disabled':''} onclick="FAPag.go(${FAPag.page-1})">‹</button>
+      <span class="pag-info">Pág ${FAPag.page} de ${pages} · ${total} reg.</span>
+      <button class="pag-btn" ${FAPag.page>=pages?'disabled':''} onclick="FAPag.go(${FAPag.page+1})">›</button>
+    </div>`;
+  } else {
+    pag = `<span class="pag-info">${total} registro(s)</span>`;
+  }
+  bar.innerHTML = sizeSel + pag;
+};
+
+/* ==========================================================
+  6) RELATÓRIOS — PowerBI (evolução, empilhado, KPIs)
+========================================================== */
+const _origRelRender = Relatorios.render.bind(Relatorios);
+Relatorios.render = function(){
+  _origRelRender();
+  const host = document.getElementById('relContent'); if(!host) return;
+  if(host.querySelector('#relPowerBI')) return;
+  const users = Users.getAll();
+  const all = users.flatMap(u=>(u.extraHours||[]));
+  const now = new Date();
+  const months = Array.from({length:6},(_,i)=>{
+    const d=new Date(now.getFullYear(),now.getMonth()-5+i,1);
+    return {key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+            label:d.toLocaleDateString('pt-BR',{month:'short'}).replace('.','')};
+  });
+  const lineVals = months.map(m=>sumVal(all.filter(h=>(h.dia||'').startsWith(m.key))));
+  /* Comparativo por setor — barras agrupadas (Pago vs Pendente) */
+  const setores = Array.from(new Set(all.map(h=>h.setor).filter(Boolean))).slice(0,8);
+  const setorPago = setores.map(s=>sumVal(all.filter(h=>h.setor===s && h.status==='Pago')));
+  const setorPend = setores.map(s=>sumVal(all.filter(h=>h.setor===s && h.status==='Pendente')));
+
+  /* KPIs com meta (meta padrão = média móvel * 1.1) */
+  const totalMes = sumVal(all.filter(h=>(h.dia||'').startsWith(months[5].key)));
+  const mediaMeses = lineVals.reduce((a,b)=>a+b,0)/(lineVals.length||1);
+  const metaMes = mediaMeses*1.1 || 1;
+  const pctMeta = Math.min(100, (totalMes/metaMes)*100);
+  const totalUsers = users.length, metaUsers = Math.max(totalUsers, 10);
+  const pctUsers = Math.min(100, (totalUsers/metaUsers)*100);
+  const totalPlant = all.length, metaPlant = Math.max(totalPlant, 20);
+  const pctPlant = Math.min(100, (totalPlant/metaPlant)*100);
+
+  const extra = document.createElement('div');
+  extra.id='relPowerBI';
+  extra.innerHTML = `
+    <div class="dash-group" style="border-left-color:var(--purple);margin-top:20px">
+      <div class="dash-group-title">📊 PowerBI · Visões Analíticas</div>
+      <div class="dash-group-sub">Evolução temporal · Comparativo por setor · KPIs com meta</div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div class="kpi-card">
+        <div class="kpi-meta">🎯 Receita do Mês</div>
+        <div class="kpi-num" style="color:var(--success)">${fmtCurrency(totalMes)}</div>
+        <div class="kpi-meta">Meta: ${fmtCurrency(metaMes)}</div>
+        <div class="kpi-bar"><div style="width:${pctMeta.toFixed(0)}%;background:var(--success)"></div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-meta">🎯 Usuários</div>
+        <div class="kpi-num" style="color:var(--primary)">${totalUsers}</div>
+        <div class="kpi-meta">Meta: ${metaUsers}</div>
+        <div class="kpi-bar"><div style="width:${pctUsers.toFixed(0)}%;background:var(--primary)"></div></div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-meta">🎯 Plantões</div>
+        <div class="kpi-num" style="color:var(--purple)">${totalPlant}</div>
+        <div class="kpi-meta">Meta: ${metaPlant}</div>
+        <div class="kpi-bar"><div style="width:${pctPlant.toFixed(0)}%;background:var(--purple)"></div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📈 Evolução Temporal (6 meses)</div>
+        <div class="chart-wrap"><canvas class="chart" id="relLine" height="190"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Comparativo por Setor</div>
+        <div class="chart-wrap"><canvas class="chart" id="relSetor" height="190"></canvas></div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>Pago</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div>Pendente</div>
+        </div>
+      </div>
+    </div>`;
+  host.appendChild(extra);
+
+  setTimeout(()=>{
+    if(window.Charts){
+      Charts.line('relLine', months.map(m=>m.label), lineVals, '#7c3aed');
+      /* "Empilhado": render duas séries em sequência usando bar individual quando disponível */
+      _drawStackedBar('relSetor', setores, setorPago, setorPend);
+    }
+  },60);
+};
+
+function _drawStackedBar(id, labels, serieA, serieB){
+  const cv = document.getElementById(id); if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width = cv.offsetWidth * (window.devicePixelRatio||1);
+  const H = cv.height = (cv.height || 190) * (window.devicePixelRatio||1);
+  ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
+  ctx.clearRect(0,0,W,H);
+  const w = cv.offsetWidth, h = cv.height/(window.devicePixelRatio||1);
+  if(!labels.length){
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted')||'#888';
+    ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Sem dados de setor', w/2, h/2);
+    return;
+  }
+  const max = Math.max(1, ...labels.map((_,i)=>serieA[i]+serieB[i]));
+  const padL=40, padB=28, padT=10, padR=10;
+  const chartW = w-padL-padR, chartH = h-padT-padB;
+  const bw = chartW/labels.length * 0.65;
+  const gap = chartW/labels.length;
+  labels.forEach((lb,i)=>{
+    const x = padL + i*gap + (gap-bw)/2;
+    const aH = (serieA[i]/max)*chartH;
+    const bH = (serieB[i]/max)*chartH;
+    ctx.fillStyle='#16a34a';
+    ctx.fillRect(x, padT+chartH-aH, bw, aH);
+    ctx.fillStyle='#d97706';
+    ctx.fillRect(x, padT+chartH-aH-bH, bw, bH);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--muted')||'#888';
+    ctx.font='10px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(String(lb).slice(0,10), x+bw/2, h-10);
+  });
+}
+
+/* ==========================================================
+  7) AUDITORIA — Busca textual + backup com logs
+========================================================== */
+function _injectAuditSearch(){
+  const page = document.getElementById('logsPage'); if(!page) return;
+  if(document.getElementById('auditSearchWrap')) return;
+  const card = page.querySelector('.card'); if(!card) return;
+  const container = document.getElementById('logsContainer'); if(!container) return;
+  const wrap = document.createElement('div'); wrap.id='auditSearchWrap';
+  wrap.innerHTML = `<input type="text" id="auditQuery" placeholder="🔍 Buscar nos logs (ação, usuário, data)..." oninput="Audit._search(this.value)">`;
+  container.parentElement.insertBefore(wrap, container);
+}
+Audit._query='';
+Audit._search = debounce(function(v){ Audit._query=(v||'').toLowerCase(); Audit.render(); },200);
+
+const _origAuditRender = Audit.render.bind(Audit);
+Audit.render = function(){
+  _origAuditRender();
+  const q = (this._query||'').trim();
+  if(!q) return;
+  const el = document.getElementById('logsContainer'); if(!el) return;
+  /* filtra DOM já renderizado */
+  const rows = Array.from(el.children);
+  let visible = 0;
+  rows.forEach(r=>{
+    const t = (r.textContent||'').toLowerCase();
+    const show = t.includes(q);
+    r.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const cnt = document.getElementById('logsCount');
+  if(cnt) cnt.textContent = `${visible} de ${this.logs.length} registro(s)`;
+};
+
+/* Backup com logs — patch nos pontos de download/criação */
+const _origBackupDownload = Backup.download.bind(Backup);
+Backup.download = function(idx){
+  const snap = this.snapshots[idx]; if(!snap) return _origBackupDownload(idx);
+  const payload = { data: snap.data, logs: (Audit.logs||[]), exportedAt: new Date().toISOString(), label: snap.label };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `erp_backup_${snap.date.slice(0,10)}_with_logs.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+
+const _origBackupCreate = Backup.create.bind(Backup);
+Backup.create = async function(data, label){
+  /* anexa logs no snapshot armazenado */
+  const enriched = { ...data, _auditLogs: JSON.parse(JSON.stringify(Audit.logs||[])) };
+  return _origBackupCreate(enriched, label);
+};
+
+/* ==========================================================
+  8) Hooks de navegação — injeta UIs ao trocar de página
+========================================================== */
+const _origGo2 = UI.go.bind(UI);
+UI.go = function(pageId, btn){
+  _origGo2(pageId, btn);
+  if(pageId==='consultaPage') _injectConsultaFilters();
+  if(pageId==='cadastroPage') _injectCadastroRubricas();
+  if(pageId==='logsPage') _injectAuditSearch();
+};
+
+/* Injeta UIs iniciais (caso o usuário comece em outra página) */
+setTimeout(()=>{
+  _injectConsultaFilters();
+  _injectCadastroRubricas();
+  _injectAuditSearch();
+  if(document.getElementById('dashboardPage')?.classList.contains('active')) Dashboard.render();
+}, 500);
+
 })();
 </script>
 </body>
